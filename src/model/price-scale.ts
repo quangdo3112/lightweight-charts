@@ -92,6 +92,8 @@ export interface PriceScaleOptions {
 	borderVisible: boolean;
 	/** Defines a color of the border between the price scale and the chart area. It is ignored if borderVisible is false */
 	borderColor: string;
+	/** Indicates whether the price scale displays only full lines of text or partial lines. */
+	entireTextOnly: boolean;
 }
 
 interface RangeCache {
@@ -126,7 +128,6 @@ export class PriceScale {
 
 	private _dataSources: IDataSource[] = [];
 	private _cachedOrderedSources: IDataSource[] | null = null;
-	private _sourcesForAutoScale: IPriceDataSource[] | null = null;
 	private _hasSeries: boolean = false;
 	private _mainSource: IPriceDataSource | null = null;
 
@@ -491,7 +492,6 @@ export class PriceScale {
 
 		this._dataSources.push(source);
 		this._mainSource = null;
-		this._sourcesForAutoScale = null;
 		this.updateFormatter();
 		this.invalidateSourcesCache();
 	}
@@ -514,7 +514,6 @@ export class PriceScale {
 		}
 
 		this._mainSource = null;
-		this._sourcesForAutoScale = null;
 		this.updateFormatter();
 		this.invalidateSourcesCache();
 	}
@@ -710,11 +709,11 @@ export class PriceScale {
 	}
 
 	public sourcesForAutoScale(): ReadonlyArray<IPriceDataSource> {
-		if (this._sourcesForAutoScale === null) {
-			this._recalculateSourcesForAutoScale();
+		function useSourceForAutoScale(source: IDataSource): source is IPriceDataSource {
+			return source instanceof PriceDataSource;
 		}
 
-		return ensureNotNull(this._sourcesForAutoScale);
+		return this._dataSources.filter(useSourceForAutoScale);
 	}
 
 	public recalculatePriceRange(visibleBars: BarsRange): void {
@@ -816,18 +815,6 @@ export class PriceScale {
 		return mainSource.formatter();
 	}
 
-	private _recalculateSourcesForAutoScale(): void {
-		function useSourceForAutoScale(source: IDataSource): source is IPriceDataSource {
-			if (!(source.isVisible() || source instanceof Series)) {
-				return false;
-			}
-
-			return source instanceof PriceDataSource;
-		}
-
-		this._sourcesForAutoScale = this._dataSources.filter(useSourceForAutoScale);
-	}
-
 	private _recalculatePriceRangeImpl(): void {
 		const visibleBars = this._invalidatedForRange.visibleBars;
 		if (visibleBars === null) {
@@ -839,9 +826,6 @@ export class PriceScale {
 
 		for (let i = 0; i < sources.length; i++) {
 			const source = sources[i];
-			if (!source.isVisible()) {
-				continue;
-			}
 
 			const firstValue = source.firstValue();
 			if (firstValue === null) {

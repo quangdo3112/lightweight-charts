@@ -21,13 +21,15 @@ import { Point } from './point';
 import { PriceScale, PriceScaleOptions } from './price-scale';
 import { Series } from './series';
 import { SeriesOptionsMap, SeriesType } from './series-options';
-import { TickMark, TimePoint, TimePointIndex } from './time-data';
+import { TickMark, TimePoint, TimePointIndex, TimePointsRange } from './time-data';
 import { TimeScale, TimeScaleOptions } from './time-scale';
 import { Watermark, WatermarkOptions } from './watermark';
 
 export interface HandleScrollOptions {
 	mouseWheel: boolean;
 	pressedMouseMove: boolean;
+	horzTouchDrag: boolean;
+	vertTouchDrag: boolean;
 }
 
 export interface HandleScaleOptions {
@@ -215,7 +217,7 @@ export class ChartModel implements IDestroyable {
 		// if autoscale option is true, it is ok, just recalculate by invalidation mask
 		// if autoscale option is false, autoscale anyway on the first draw
 		// also there is a scenario when autoscale is true in constructor and false later on applyOptions
-		const mask = new InvalidateMask(InvalidationLevel.None);
+		const mask = new InvalidateMask(InvalidationLevel.Full);
 		mask.invalidatePane(actualIndex, {
 			level: InvalidationLevel.None,
 			autoScale: true,
@@ -231,6 +233,7 @@ export class ChartModel implements IDestroyable {
 
 	public scalePriceTo(pane: Pane, priceScale: PriceScale, x: number): void {
 		pane.scalePriceTo(priceScale, x);
+		this.updateCrosshair();
 		this._invalidate(this._paneInvalidationMask(pane, InvalidationLevel.Light));
 	}
 
@@ -251,6 +254,7 @@ export class ChartModel implements IDestroyable {
 			return;
 		}
 		pane.scrollPriceTo(priceScale, x);
+		this.updateCrosshair();
 		this._invalidate(this._paneInvalidationMask(pane, InvalidationLevel.Light));
 	}
 
@@ -306,6 +310,7 @@ export class ChartModel implements IDestroyable {
 	public scaleTimeTo(x: Coordinate): void {
 		this._timeScale.scaleTo(x);
 		this.recalculateAllPanes();
+		this.updateCrosshair();
 		this.lightUpdate();
 	}
 
@@ -528,6 +533,12 @@ export class ChartModel implements IDestroyable {
 	public fitContent(): void {
 		const mask = new InvalidateMask(InvalidationLevel.Light);
 		mask.setFitContent();
+		this._invalidate(mask);
+	}
+
+	public setTargetTimeRange(range: TimePointsRange): void {
+		const mask = new InvalidateMask(InvalidationLevel.Light);
+		mask.setTargetTimeRange(range);
 		this._invalidate(mask);
 	}
 

@@ -64,14 +64,15 @@ The following set of options can be used to adjust the price axis interface:
 
 |Name|Type|Default|Description|
 |--|---|-|--|
-|`position`|`string`|`right`|Sets the position to display price scale. Options available: `left`, `right`, `none`|
+|`position`|`left` &#124; `right` &#124; `none`|`right`|Sets the position to display price scale|
 |`mode`|[PriceScaleMode](./constants.md#pricescalemode) |`PriceScaleMode.Normal`|Sets the price scale mode|
 |`autoScale`|`boolean`|`true`|If true, fits series data to a chart size|
 |`invertScale`|`boolean`|`false`|If true, a chart series is reflected vertically, so that a growing trend is shown as a falling one and vise versa|
 |`alignLabels`|`boolean`|`true`|If true, labels with price data do not overlap|
 |`borderVisible`|`boolean`|`true`|If true, price scale border is visible|
 |`borderColor`|`string`|`#2b2b43`|Pricescale border color|
-|`scaleMargins`|`object`|`{ bottom: 0.1, top: 0.2 }`|Sets the series margins from the top and bottom chart borders (per cent)|
+|`scaleMargins`|`{ bottom, top }`|`{ bottom: 0.1, top: 0.2 }`|Sets the series margins from the top and bottom chart borders (per cent)|
+|`entireTextOnly`|`boolean`|`false`|If false, top and bottom edge labels are shown even if they are partially not visible |
 
 ### An example of a price scale customization
 
@@ -114,6 +115,7 @@ The following options are available in the time axis interface:
 |`borderColor`|`string`|`#2b2b43`|Timescale border color|
 |`visible`|`boolean`|`true`|If true, timescale is shown on a chart|
 |`timeVisible`|`boolean`|`false`|If true, time is shown on the time scale and crosshair vertical label|
+|`secondsVisible`|`boolean`|`true`|If true, seconds are shown on the label of the crosshair vertical line in `hh:mm:ss` format on intraday intervals|
 
 ### Example of timescale customization
 
@@ -129,6 +131,7 @@ chart.applyOptions({
         borderColor: '#fff000',
         visible: true,
         timeVisible: true,
+        secondsVisible: false,
     },
 });
 ```
@@ -157,6 +160,7 @@ The following options are available for vertical and horizontal lines of a cross
 |`style`|[LineStyle](./constants.md#linestyle)|`LineStyle.Dashed`|Crosshair line style|
 |`visible`|`boolean`|`true`|If true, crosshair line is displayed on a chart|
 |`labelVisible`|`boolean`|`true`|If true, a data label is shown on a relevant scale|
+|`labelBackgroundColor`|`string`|`#4c525e`|Crosshair label background color|
 |`mode`|[CrosshairMode](./constants.md#crosshairmode)|`CrosshairMode.Magnet`|Sets the mode of crosshair moving.|
 
 ### An example of a crosshair customization
@@ -230,10 +234,10 @@ The following options are available for the watermark:
 |----------------------------|-------|---------|-|
 |`color`|`string`|`rgba(0, 0, 0, 0)`|Watermark color|
 |`visible`|`boolean`|`false`|If true, the watermark is displayed on a chart|
-|`text`|`string`|''|Contains the text to be displayed in the watermark|
+|`text`|`string`|`''`|Contains the text to be displayed in the watermark|
 |`fontSize`|`number`|`48`|Watermark's font size in pixels|
-|`horzAlign`|`string`|`center`|Watermark horizontal alignment position. Available options : 'left', 'center', 'right'|
-|`vertAlign`|`string`|`center`|Watermark vertical alignment position. Available options: 'top', 'center', 'bottom'|
+|`horzAlign`|`left` &#124; `center` &#124; `right`|`center`|Watermark horizontal alignment position|
+|`vertAlign`|`top` &#124; `center` &#124; `bottom`|`center`|Watermark vertical alignment position|
 
 ### An example of a watermark customization
 
@@ -283,16 +287,18 @@ You can disable any of them using `handleScroll` and `handleScale` options.
 
 |Name                        |Type   |Default  |Description|
 |----------------------------|-------|---------|-|
-|`mouseWheel`|`boolean`|`true`|If true series scrolling with horizontal mouse wheel is enabled|
-|`pressedMouseMove`|`boolean`|`true`|If true series scrolling with left mouse button pressed is allowed|
+|`mouseWheel`|`boolean`|`true`|If true, chart scrolling with horizontal mouse wheel is enabled|
+|`pressedMouseMove`|`boolean`|`true`|If true, chart scrolling with left mouse button pressed is allowed|
+|`horzTouchDrag`|`boolean`|`true`|If true, the chart handles horizontal pointer movements on touch screens. In this case the webpage is not scrolled. If you set it to false, the webpage is scrolled instead. Keep in mind that if the user starts scrolling the chart vertically or horizontally, scrolling is continued in any direction until the user releases the finger|
+|`vertTouchDrag`|`boolean`|`true`|If true, the chart handles vertical pointer movements on touch screens. In this case the webpage is not scrolled. If you set it to false, the webpage is scrolled instead. Keep in mind that if the user starts scrolling the chart vertically or horizontally, scrolling is continued in any direction until the user releases the finger.|
 
 ### Scaling options
 
 |Name                        |Type   |Default  |Description|
 |----------------------------|-------|---------|-|
-|`axisPressedMouseMove`|`boolean`|`true`|If true axis scaling with left mouse button pressed is allowed|
-|`mouseWheel`|`boolean`|`true`|If true series scaling with mouse whee is enabled|
-|`pinch`|`boolean`|`true`|If true series scaling with pinch/zoom gestures (this option is supported on touch devices) is enabled|
+|`axisPressedMouseMove`|`boolean`|`true`|If true, axis scaling with left mouse button pressed is allowed|
+|`mouseWheel`|`boolean`|`true`|If true, series scaling with a mouse wheel is enabled|
+|`pinch`|`boolean`|`true`|If true, series scaling with pinch/zoom gestures (this option is supported on touch devices) is enabled|
 
 ### An example of a scrolling/scaling customization
 
@@ -308,15 +314,4 @@ chart.applyOptions({
         pinch: true,
     },
 });
-```
-
-## Branding
-
-You may hide our branding if you feel that it harms user experience on your website.
-Note that according to our terms you should add a link leading to <https://www.tradingview.com/> somewhere on your web page.
-This link must contain the text from the NOTICE file which is a part of the product package.
-Please see `disableBranding` method below.
-
-```javascript
-chart.disableBranding();
 ```

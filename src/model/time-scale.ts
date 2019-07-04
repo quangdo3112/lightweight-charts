@@ -13,7 +13,7 @@ import { Coordinate } from './coordinate';
 import { FormattedLabelsCache } from './formatted-labels-cache';
 import { LocalizationOptions } from './localization-options';
 import { TickMarks } from './tick-marks';
-import { SeriesItemsIndexesRange, TickMark, TimedValue, TimePoint, TimePointIndex } from './time-data';
+import { SeriesItemsIndexesRange, TickMark, TimedValue, TimePoint, TimePointIndex, TimePointsRange, UTCTimestamp } from './time-data';
 import { TimePoints } from './time-points';
 
 const enum Constants {
@@ -88,7 +88,7 @@ export class TimeScale {
 		this._options = options;
 		this._localizationOptions = localizationOptions;
 		this._rightOffset = options.rightOffset;
-		this._barSpacing = options.barSpacing;
+		this._barSpacing = getValidBarSpacing(options.barSpacing);
 		this._model = model;
 
 		this._updateDateTimeFormatter();
@@ -168,7 +168,7 @@ export class TimeScale {
 		if (this._options.lockVisibleTimeRangeOnResize && this._width) {
 			// recalculate bar spacing
 			const newBarSpacing = this._barSpacing * width / this._width;
-			this._tryToUpdateBarSpacing(newBarSpacing);
+			this._setBarSpacing(newBarSpacing);
 		}
 
 		// if time scale is scrolled to the end of data and we have fixed right edge
@@ -239,10 +239,7 @@ export class TimeScale {
 	}
 
 	public setBarSpacing(newBarSpacing: number): void {
-		newBarSpacing = getValidBarSpacing(newBarSpacing);
-		if (!this._tryToUpdateBarSpacing(newBarSpacing)) {
-			return;
-		}
+		this._setBarSpacing(newBarSpacing);
 
 		// do not allow scroll out of visible bars
 		this._correctOffset();
@@ -476,10 +473,6 @@ export class TimeScale {
 		animationFn();
 	}
 
-	public scrollStartPoint(): Coordinate | null {
-		return this._scrollStartPoint;
-	}
-
 	public update(index: TimePointIndex, values: TimePoint[], marks: TickMark[]): void {
 		this._visibleBarsInvalidated = true;
 		if (values.length > 0) {
@@ -512,8 +505,8 @@ export class TimeScale {
 	}
 
 	public setVisibleRange(range: BarsRange): void {
-		const length = range.lastBar() - range.firstBar();
-		this._barSpacing = this._width / length;
+		const length = range.count();
+		this._setBarSpacing(this._width / length);
 		this._rightOffset = range.lastBar() - this.baseIndex();
 		this._correctOffset();
 		this._visibleBarsInvalidated = true;
@@ -528,6 +521,25 @@ export class TimeScale {
 			return;
 		}
 		this.setVisibleRange(new BarsRange(first - 1 as TimePointIndex, last + 1 + this._options.rightOffset as TimePointIndex));
+	}
+
+	public setTimePointsRange(range: TimePointsRange): void {
+		const points = this.points();
+		const firstIndex = points.firstIndex();
+		const lastIndex = points.lastIndex();
+
+		if (firstIndex === null || lastIndex === null) {
+			return;
+		}
+
+		const firstPoint = ensureNotNull(points.valueAt(firstIndex)).timestamp;
+		const lastPoint = ensureNotNull(points.valueAt(lastIndex)).timestamp;
+
+		const barRange = new BarsRange(
+			ensureNotNull(points.indexOf(Math.max(firstPoint, range.from.timestamp) as UTCTimestamp, true)),
+			ensureNotNull(points.indexOf(Math.min(lastPoint, range.to.timestamp) as UTCTimestamp, true))
+		);
+		this.setVisibleRange(barRange);
 	}
 
 	public formatDateTime(time: TimePoint): string {
@@ -552,18 +564,18 @@ export class TimeScale {
 		return Math.round(index * 1000000) / 1000000;
 	}
 
-	private _tryToUpdateBarSpacing(newBarSpacing: number): boolean {
+	private _setBarSpacing(newBarSpacing: number): void {
+		newBarSpacing = getValidBarSpacing(newBarSpacing);
+
 		const oldBarSpacing = this._barSpacing;
 		if (oldBarSpacing === newBarSpacing) {
-			return false;
+			return;
 		}
 
 		this._visibleBarsInvalidated = true;
 		this._barSpacing = newBarSpacing;
 		this._barSpacingChanged.fire(oldBarSpacing, newBarSpacing);
 		this._resetTimeMarksCache();
-
-		return true;
 	}
 
 	private _updateVisibleBars(): void {
